@@ -1,1 +1,1 @@
-# ShellHacks
+# ShellHacks 2024
