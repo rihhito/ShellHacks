@@ -1,46 +1,40 @@
+// App.js
 import React, { useState } from 'react';
-import logo from './logo.svg';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import './App.css';
 import Login from './ui/Login'; // Import the Login component
 import Dashboard from './ui/dashboard'; // Import the Dashboard component
+import MoneyBasics from './ui/modules/m1/MoneyBasics'; // Import MoneyBasics page
+
 
 function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} /> {/* Initial screen */}
+        <Route path="/dashboard" element={<Dashboard />} /> {/* Dashboard */}
+        <Route path="/money-basics" element={<MoneyBasics />} /> {/* MoneyBasics route */}
+      </Routes>
+    </Router>
+  );
+}
+
+// Creating a LoginPage wrapper for redirection
+const LoginPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false); // State to track login status
+  const navigate = useNavigate(); // For navigating after login
 
   // Dummy authentication function
   const handleLogin = (email, password) => {
-    // For now, we'll just check against a static email and password.
-    // Replace this with actual authentication logic.
     if (email === 'user@fiu.edu' && password === '1') {
       setIsLoggedIn(true); // Set login status to true if credentials match
+      navigate('/dashboard'); // Redirect to the dashboard after login
     } else {
       alert('Incorrect email or password');
     }
   };
 
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-      {isLoggedIn ? (
-        <Dashboard /> // Show Dashboard if logged in
-      ) : (
-        <Login onLogin={handleLogin} /> // Show Login if not logged in
-      )}
-    </div>
-  );
-}
+  return isLoggedIn ? <Dashboard /> : <Login onLogin={handleLogin} />;
+};
 
 export default App;

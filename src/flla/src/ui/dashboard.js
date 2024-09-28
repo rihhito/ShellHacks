@@ -1,12 +1,11 @@
-// Dashboard.js
-import React, { useState } from 'react';
-import MoneyBasics from './modules/m1/MoneyBasics'; // Import MoneyBasics module
+import React from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for routing
 
 const Dashboard = () => {
-  const [showModule, setShowModule] = useState(false);
+  const navigate = useNavigate(); // Hook for navigation
 
-  const handleModuleClick = () => {
-    setShowModule(true);
+  const handlePrepareForBattle = () => {
+    navigate('/money-basics'); // Route to the MoneyBasics page
   };
 
   return (
@@ -14,7 +13,6 @@ const Dashboard = () => {
       <div style={styles.mainContent}>
         {/* User profile section */}
         <div style={styles.profileContainer}>
-          {/* Placeholder for user avatar */}
           <img 
             src="https://via.placeholder.com/150" 
             alt="Custom Avatar" 
@@ -43,14 +41,8 @@ const Dashboard = () => {
 
         {/* Buttons for Prepare for Battle and Battle */}
         <div style={styles.buttonsContainer}>
-          {!showModule ? (
-            <>
-              <button onClick={handleModuleClick} style={styles.battleButton}> Prepare for Battle </button>
-              <button style={styles.battleButton}> Battle </button>
-            </>
-          ) : (
-            <MoneyBasics /> // Render the Money Basics module when clicked
-          )}
+          <button onClick={handlePrepareForBattle} style={styles.battleButton}> Prepare for Battle </button>
+          <button style={styles.battleButton}> Battle </button>
         </div>
       </div>
 
@@ -61,7 +53,7 @@ const Dashboard = () => {
           alt="AI Teacher Avatar" 
           style={styles.teacherAvatar} 
         />
-        <h3 style={styles.teacherName}>Dani</h3>
+        <h3 style={styles.teacherName}>Dani (AI Teacher)</h3>
       </div>
     </div>
   );
@@ -70,13 +62,12 @@ const Dashboard = () => {
 const styles = {
   container: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     height: '100vh',
     backgroundColor: '#1e1e1e', // Dark background
     color: '#fff', // White text for contrast
     fontFamily: "'Poppins', sans-serif",
-    padding: '0 50px', // Padding for spacing
     position: 'relative',
   },
   mainContent: {
@@ -84,13 +75,12 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1, // Main content takes up available space
   },
   profileContainer: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: '40px',
+    marginTop: '50px', // Lower the placeholder by 1 inch (roughly 50px)
   },
   avatar: {
     width: '150px',
@@ -121,9 +111,10 @@ const styles = {
   },
   buttonsContainer: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-    marginTop: '30px', // Space between profile and buttons
+    justifyContent: 'center',
+    gap: '20px', // Space between buttons
+    marginTop: '30px',
+    flexDirection: 'row', // Set buttons side by side
   },
   battleButton: {
     padding: '15px 30px',
@@ -140,7 +131,8 @@ const styles = {
   teacherContainer: {
     position: 'absolute',
     right: '20px',
-    top: '20%', // Positioned vertically in the middle
+    top: '50%', // Align vertically at the center of the screen
+    transform: 'translateY(-50%)', // Center the AI Teacher vertically
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
