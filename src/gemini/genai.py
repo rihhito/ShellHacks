@@ -1,13 +1,23 @@
+import os
+import firebase_admin
 import google.generativeai as genai
-import parse
+from dotenv import load_dotenv
+from firebase_admin import credentials, firestore
 
-# Initialize Back4App
-parse.application_id = "IKB2Vo55ersG2hAbqnbvZXmvkftAdzfUZ722QQLp"
-parse.client_key = "Yrs2gSZJ7tG82qbno5SWON6L0GYegCgnSTLj2S8X"
-parse.server_url = "https://parseapi.back4app.com"
+load_dotenv()
 
-#API KEY
-GEMINI_API_KEY = "AIzaSyC2RolJ3xVHJEXL9gu0AUcNDpX0LhAV26w"
+# Path to your service account key
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SERVICE_ACCOUNT_PATH = os.path.join(BASE_DIR, 'config', 'firebase_key.json')
+cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
+firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
+# Access the variable
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+#Gemini
 genai.configure(api_key= GEMINI_API_KEY)
 
 #Create the model
@@ -19,40 +29,32 @@ generation_config = {
   "response_mime_type": "text/plain",
 }
 
-# Parse class name for chat history
-CHAT_HISTORY_CLASS = "ChatHistory"
-
 # Function to load chat history from Back4App
 def load_chat_history():
-    try:
-        ChatHistory = parse.Object.factory(CHAT_HISTORY_CLASS)
-        query = ChatHistory.Query.all()
-        results = query.fetch()
-        
-        history = []
-        for result in results:
-            history.append({
-                "user": result.get("userMessage"),
-                "assistant": result.get("assistantMessage")
-            })
-        return history
-    except Exception as e:
-        print(f"Error loading chat history: {e}")
-        return []
+    chat_history = []
+    docs = db.collection('chat_history').order_by('timestamp').stream()
+    for doc in docs:
+        data = doc.to_dict()
+        chat_history.append({
+            'user': data['user_message'],
+            'assistant': data['assistant_message']
+        })
+    return chat_history
 
 
-# Function to save a chat entry to Back4App
-def save_chat_history(user_message, assistant_response):
-    try:
-        ChatHistory = parse.Object.factory(CHAT_HISTORY_CLASS)
-        chat_entry = ChatHistory()
-        chat_entry.set("userMessage", user_message)
-        chat_entry.set("assistantMessage", assistant_response)
-        chat_entry.save()
-    except Exception as e:
-        print(f"Error saving chat history: {e}")
 
-# Load existing chat history if available
+# Function to save a chat entry to Firebase
+def save_chat_message(user_message, assistant_message):
+    doc_ref = db.collection('chat_history').document()
+    doc_ref.set({
+        'user_message': user_message,
+        'assistant_message': assistant_message,
+        'timestamp': firestore.SERVER_TIMESTAMP
+    })
+    print("Successfully saved chat entry to Firebase.")
+
+
+# Load existing chat history
 history = load_chat_history()
 
 # Model initialization and settings
@@ -77,11 +79,9 @@ def ai_call(question, chosen_answer, correct_answer):
     user_message = f"Question: {question}, the chosen answer by the user was: {chosen_answer}, the correct answer was: {correct_answer}"
     response = chat_session.send_message(user_message)
 
-    # Append user and assistant responses to the history
     history.append({"user": user_message, "assistant": response.text})
 
-    # Save updated history to file
-    save_chat_history(history)
+    save_chat_message(user_message, response.text)
 
     print(response.text)
 
@@ -93,6 +93,5 @@ ai_call("What is a savings account?", "A credit account", "An account to save mo
 response = chat_session.send_message("Who are you?")
 print(response.text)
 
-# Save this interaction as well
 history.append({"user": "Who are you?", "assistant": response.text})
-save_chat_history(history)
+save_chat_message("Who are you", response.text)
