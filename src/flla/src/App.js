@@ -11,7 +11,7 @@ function App() {
   const handleLogin = (email, password) => {
     // For now, we'll just check against a static email and password.
     // Replace this with actual authentication logic.
-    if (email === 'user@example.com' && password === 'password') {
+    if (email === 'user@fiu.edu' && password === '1') {
       setIsLoggedIn(true); // Set login status to true if credentials match
     } else {
       alert('Incorrect email or password');
