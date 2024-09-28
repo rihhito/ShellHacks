@@ -53,7 +53,7 @@ const Dashboard = () => {
           alt="AI Teacher Avatar" 
           style={styles.teacherAvatar} 
         />
-        <h3 style={styles.teacherName}>Dani (AI Teacher)</h3>
+        <h3 style={styles.teacherName}>Dani</h3>
       </div>
     </div>
   );
@@ -130,17 +130,18 @@ const styles = {
   },
   teacherContainer: {
     position: 'absolute',
-    right: '20px',
+    right: '5px',
     top: '50%', // Align vertically at the center of the screen
-    transform: 'translateY(-50%)', // Center the AI Teacher vertically
+    transform: 'translateY(-70%)', // Center the AI Teacher vertically
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
   },
   teacherAvatar: {
-    width: '100px',
-    height: '100px',
-    borderRadius: '50%',
+    width: '50px',
+    min_width: '500px',
+    height: '50px',
+    borderRadius: '25%',
     border: '3px solid gold', // Gold border for teacher avatar
   },
   teacherName: {
