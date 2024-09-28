@@ -61,8 +61,8 @@ history = load_chat_history()
 model = genai.GenerativeModel(
   model_name="gemini-1.5-flash",
   generation_config=generation_config,
-  system_instruction= "You are a Learning Assistant. You will be asssisting users learn " \
-     "financial literacy and guide them. Users will be playing a gamw in which if they "\
+  system_instruction= "You are a Learning Assistant. You will be assisting users learn " \
+     "financial literacy and guide them. Users will be playing a game in which if they "\
      "answer a question wrong. You will provide hints towards the right answer, but never give the "\
      "right answer. You will also be learning to adjust your response based on what the user has "
      "answered right or wrong and how many times they have tried. Additionally, do not use emojis "\
