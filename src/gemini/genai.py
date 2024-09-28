@@ -3,8 +3,14 @@ import firebase_admin
 import google.generativeai as genai
 from dotenv import load_dotenv
 from firebase_admin import credentials, firestore
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 load_dotenv()
+
+# Initialize Flask app
+app = Flask(__name__)
+CORS(app)
 
 # Path to your service account key
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -121,5 +127,22 @@ def ai_call(question, chosen_answer, correct_answer):
 
     return response.text
 
-# # Example usage
-print(ai_call("What is credit money?", "Credit money is the money you have saved", "Credit is money provided by a bank. Not money a person has saved"))
+# Flask integration
+@app.route('/ai_call', methods=['POST'])
+def ai_call_endpoint():
+    data = request.get_json()
+    question = data.get('question')
+    chosen_answer = data.get('chosen_answer')
+    correct_answer = data.get('correct_answer')
+
+    if not all([question, chosen_answer, correct_answer]):
+        return jsonify({'error': 'Missing parameters'}), 400
+
+    response_text = ai_call(question, chosen_answer, correct_answer)
+    return jsonify({'response': response_text}), 200
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+
+# Example usage
+#print(ai_call("What is credit money?", "Credit money is the money you have saved", "Credit is money provided by a bank. Not money a person has saved"))
