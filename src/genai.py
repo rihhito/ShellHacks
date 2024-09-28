@@ -1,6 +1,12 @@
-import os
 import google.generativeai as genai
+import parse
 
+# Initialize Back4App
+parse.application_id = "IKB2Vo55ersG2hAbqnbvZXmvkftAdzfUZ722QQLp"
+parse.client_key = "Yrs2gSZJ7tG82qbno5SWON6L0GYegCgnSTLj2S8X"
+parse.server_url = "https://parseapi.back4app.com"
+
+#API KEY
 GEMINI_API_KEY = "AIzaSyC2RolJ3xVHJEXL9gu0AUcNDpX0LhAV26w"
 genai.configure(api_key= GEMINI_API_KEY)
 
@@ -13,6 +19,43 @@ generation_config = {
   "response_mime_type": "text/plain",
 }
 
+# Parse class name for chat history
+CHAT_HISTORY_CLASS = "ChatHistory"
+
+# Function to load chat history from Back4App
+def load_chat_history():
+    try:
+        ChatHistory = parse.Object.factory(CHAT_HISTORY_CLASS)
+        query = ChatHistory.Query.all()
+        results = query.fetch()
+        
+        history = []
+        for result in results:
+            history.append({
+                "user": result.get("userMessage"),
+                "assistant": result.get("assistantMessage")
+            })
+        return history
+    except Exception as e:
+        print(f"Error loading chat history: {e}")
+        return []
+
+
+# Function to save a chat entry to Back4App
+def save_chat_history(user_message, assistant_response):
+    try:
+        ChatHistory = parse.Object.factory(CHAT_HISTORY_CLASS)
+        chat_entry = ChatHistory()
+        chat_entry.set("userMessage", user_message)
+        chat_entry.set("assistantMessage", assistant_response)
+        chat_entry.save()
+    except Exception as e:
+        print(f"Error saving chat history: {e}")
+
+# Load existing chat history if available
+history = load_chat_history()
+
+# Model initialization and settings
 model = genai.GenerativeModel(
   model_name="gemini-1.5-flash",
   generation_config=generation_config,
@@ -26,21 +69,30 @@ model = genai.GenerativeModel(
      "towards the right answer. You are not a chatbot but more like a hint assistant"
 )
 
-chat_session = model.start_chat(
-  history=[
-  ]
-)
+# Load the model based on previous chats
+chat_session = model.start_chat(history=history)
 
-def ai_Call(question, chosen_answer, correct_answer):
 
-    
-    response = chat_session.send_message(f"Question: {question}, the chosen answer by the user was: {chosen_answer} \
-                                         , the correct answer was: {correct_answer}")
+def ai_call(question, chosen_answer, correct_answer):
+    user_message = f"Question: {question}, the chosen answer by the user was: {chosen_answer}, the correct answer was: {correct_answer}"
+    response = chat_session.send_message(user_message)
+
+    # Append user and assistant responses to the history
+    history.append({"user": user_message, "assistant": response.text})
+
+    # Save updated history to file
+    save_chat_history(history)
 
     print(response.text)
 
 
-ai_Call("What is a savings account?", "A credit account", "An account to save money in")
+# Example usage
+ai_call("What is a savings account?", "A credit account", "An account to save money in")
 
+# Another interaction
 response = chat_session.send_message("Who are you?")
 print(response.text)
+
+# Save this interaction as well
+history.append({"user": "Who are you?", "assistant": response.text})
+save_chat_history(history)
