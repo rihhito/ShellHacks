@@ -18,6 +18,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} /> {/* Dashboard */}
         <Route path="/money-basics" element={<MoneyBasics />} /> {/* MoneyBasics route */}
         <Route path="/modules" element={<Modules />} /> {/* MoneyBasics route */}
+        <Route path="/battle" element={<Battle />} /> {/* Battle route */}
       </Routes>
     </Router>
   );

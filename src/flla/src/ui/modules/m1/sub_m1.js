@@ -24,6 +24,8 @@ const SubModule1 = ({ setProgress, onBack }) => {
         question: `Please ask a question for Level ${currentLevel}.`
       });
       setQuestion(response.data.response);
+
+      // If voice is toggled on, speak the question
       if (toggleVoice) {
         speak(response.data.response);
       }
@@ -38,12 +40,25 @@ const SubModule1 = ({ setProgress, onBack }) => {
   const handleUserAnswerSubmit = async () => {
     if (userAnswer.trim()) {
       const accuracy = Math.random() > 0.5;  // Simulate answer correctness (replace with actual logic)
-      if (accuracy) {
-        setPoints(prevPoints => prevPoints + 10);  // Award 10 points for a correct answer
+      const responseMessage = accuracy
+        ? 'Great job! That is correct.'
+        : 'That was incorrect. Please try again or ask Dani for help.';
+      
+      setExplanation(responseMessage); // Dani gives feedback
+
+      // If voice is toggled on, speak the feedback
+      if (toggleVoice) {
+        speak(responseMessage);
       }
+
+      if (accuracy) {
+        setPoints((prevPoints) => prevPoints + 10);  // Award 10 points for a correct answer
+      }
+
       if (points + 10 >= 30) {  // Assume 30 points to unlock the next level
         unlockNextLevel();
       }
+      
       setUserAnswer('');  // Clear the answer field
     }
   };
@@ -51,12 +66,12 @@ const SubModule1 = ({ setProgress, onBack }) => {
   // Unlock the next level
   const unlockNextLevel = () => {
     if (currentLevel < 3) {  // Assuming 3 levels in SubModule1
-      setLevelUnlocked(prevLevels => {
+      setLevelUnlocked((prevLevels) => {
         const newLevels = [...prevLevels];
         newLevels[currentLevel] = true;
         return newLevels;
       });
-      setProgress(prevProgress => Math.min(prevProgress + 33, 100));  // Update progress in parent component
+      setProgress((prevProgress) => Math.min(prevProgress + 33, 100));  // Update progress in parent component
       setCurrentLevel(currentLevel + 1);
     }
   };
@@ -64,14 +79,16 @@ const SubModule1 = ({ setProgress, onBack }) => {
   // Handle voice toggle
   const handleToggleVoice = () => {
     setToggleVoice(!toggleVoice);
-    if (!toggleVoice && question) {
-      speak(question);
+    
+    // If turning on voice and there's already an explanation, speak it
+    if (!toggleVoice && explanation) {
+      speak(explanation);
     } else {
-      stop();
+      stop(); // Stop any ongoing speech if toggling off
     }
   };
 
-  // Load explanation based on the current level
+  // Load explanation and ask a question when the level changes
   useEffect(() => {
     askQuestion();  // Dani asks a question when the level changes
   }, [currentLevel]);
@@ -277,4 +294,3 @@ const styles = {
 };
 
 export default SubModule1;
-
