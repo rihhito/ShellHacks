@@ -15,12 +15,12 @@ const MoneyBasics = () => {
     <div style={styles.container}>
       {/* User Placeholder at the Top Left */}
       <div style={styles.userPlaceholder}>
-        <img
-          src="https://via.placeholder.com/50"
-          alt="User Avatar"
-          style={styles.avatar}
+      <img 
+          src={`${process.env.PUBLIC_URL}/avatars/ReadyPlayerMe-Avatar.png`} 
+          alt="Custom Avatar" 
+          style={styles.avatar} 
         />
-        <span style={styles.username}>User Name</span>
+        <span style={styles.username}> Messi </span>
       </div>
 
       <h1 style={styles.title}>Money Basics</h1>

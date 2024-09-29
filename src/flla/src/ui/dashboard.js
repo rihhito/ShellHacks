@@ -16,12 +16,12 @@ const Dashboard = () => {
       <div style={styles.mainContent}>
         {/* User profile section */}
         <div style={styles.profileContainer}>
-          <img 
-            src="https://via.placeholder.com/150" 
-            alt="Custom Avatar" 
-            style={styles.avatar} 
-          />
-          <h2 style={styles.username}>Player Name</h2>
+        <img 
+          src={`${process.env.PUBLIC_URL}/avatars/ReadyPlayerMe-Avatar.png`} 
+          alt="User Avatar" 
+          style={styles.avatar} 
+        />
+          <h2 style={styles.username}>Messi </h2>
           <div style={styles.statsContainer}>
             <div style={styles.statBox}>
               <h3>Score</h3>
@@ -51,9 +51,9 @@ const Dashboard = () => {
 
       {/* AI Teacher (Dani) on the right */}
       <div style={styles.teacherContainer}>
-        <img 
-          src="https://via.placeholder.com/100" 
-          alt="AI Teacher Avatar" 
+      <img 
+          src={`${process.env.PUBLIC_URL}/avatars/Daniai.png`} 
+          alt="AI Teacher" 
           style={styles.teacherAvatar} 
         />
         <h3 style={styles.teacherName}>Dani</h3>
