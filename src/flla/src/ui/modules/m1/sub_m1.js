@@ -13,24 +13,32 @@ const SubModule1 = ({ setProgress, onBack }) => {
   const [userAnswer, setUserAnswer] = useState('');  // Store user answer
   const [levelUnlocked, setLevelUnlocked] = useState([true, false, false]);  // Track level unlocks
 
+  // Level topics
+  const levelTopics = {
+    1: "Understanding Money",
+    2: "Savings and Investments",
+    3: "Financial Planning"
+  };
+
   // Use the custom speech synthesis hook
   const { speak, stop, speaking, speechSupported } = useSpeechSynthesis();
 
-  // Call Gemini API for Dani to ask a question
+  // Call Gemini API for Dani to ask a question and start conversation
   const askQuestion = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post('http://10.108.132.25:5000/ai_call', {
-        question: `Please ask a question for Level ${currentLevel}.`
+      const response = await axios.post('http://localhost:5000/ai_call', {
+        question: `Please explain the current level.`,
+        level_topic: levelTopics[currentLevel]  // Send the level topic to AI
       });
       setQuestion(response.data.response);
 
       // Log when question is received
-      console.log('Received question: ', response.data.response);
+      console.log('Received explanation: ', response.data.response);
 
-      // If voice is toggled on, speak the question
+      // If voice is toggled on, speak the explanation
       if (toggleVoice) {
-        console.log('Speaking the question...');
+        console.log('Speaking the explanation...');
         speak(response.data.response);
       }
     } catch (error) {
@@ -40,31 +48,36 @@ const SubModule1 = ({ setProgress, onBack }) => {
     }
   };
 
-  // Handle the user answer submission
+  // Handle the user answer submission and analyze response
   const handleUserAnswerSubmit = async () => {
     if (userAnswer.trim()) {
-      const accuracy = Math.random() > 0.5;  // Simulate answer correctness (replace with actual logic)
-      const responseMessage = accuracy
-        ? 'Great job! That is correct.'
-        : 'That was incorrect. Please try again or ask Dani for help.';
-      
-      setExplanation(responseMessage); // Dani gives feedback
+      try {
+        const response = await axios.post('http://localhost:5000/ai_call', {
+          question: userAnswer,
+          level_topic: levelTopics[currentLevel]  // Provide context to AI
+        });
+        const feedback = response.data.response;
+        setExplanation(feedback); // Dani gives feedback
 
-      // If voice is toggled on, speak the feedback
-      if (toggleVoice) {
-        console.log('Speaking feedback...');
-        speak(responseMessage);
-      }
+        // If voice is toggled on, speak the feedback
+        if (toggleVoice) {
+          console.log('Speaking feedback...');
+          speak(feedback);
+        }
 
-      if (accuracy) {
-        setPoints((prevPoints) => prevPoints + 10);  // Award 10 points for a correct answer
-      }
+        if (feedback.includes('correct')) {
+          setPoints((prevPoints) => prevPoints + 10);  // Award 10 points for a correct answer
+        }
 
-      if (points + 10 >= 30) {  // Assume 30 points to unlock the next level
-        unlockNextLevel();
+        // Automatically advance to the next level if points are sufficient
+        if (points + 10 >= 30) {  // Assume 30 points to unlock the next level
+          unlockNextLevel();
+        }
+
+        setUserAnswer('');  // Clear the answer field
+      } catch (error) {
+        console.error('Error analyzing answer:', error);
       }
-      
-      setUserAnswer('');  // Clear the answer field
     }
   };
 
@@ -78,6 +91,8 @@ const SubModule1 = ({ setProgress, onBack }) => {
       });
       setProgress((prevProgress) => Math.min(prevProgress + 33, 100));  // Update progress in parent component
       setCurrentLevel(currentLevel + 1);
+      // Auto-ask new question when level advances
+      askQuestion();
     }
   };
 
@@ -96,7 +111,7 @@ const SubModule1 = ({ setProgress, onBack }) => {
 
   // Load explanation and ask a question when the level changes
   useEffect(() => {
-    askQuestion();  // Dani asks a question when the level changes
+    askQuestion();  // Dani starts each level with an explanation
   }, [currentLevel]);
 
   // Stop speech when component unmounts (user navigates away)
@@ -108,7 +123,7 @@ const SubModule1 = ({ setProgress, onBack }) => {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>Sub-module 1: Understanding Money</h1>
+      <h1 style={styles.title}>Sub-module 1: {levelTopics[currentLevel]}</h1>
 
       {/* Dani's Avatar and Explanation */}
       <div style={styles.daniExplanation}>
@@ -120,7 +135,7 @@ const SubModule1 = ({ setProgress, onBack }) => {
           />
         </div>
         <div style={styles.captionBox}>
-          <p>{question}</p>  {/* Show the question */}
+          <p>{question}</p>  {/* Show the question */} 
         </div>
         <button onClick={handleToggleVoice} style={styles.toggleButton}>
           {toggleVoice ? 'Turn Off Voice' : 'Turn On Voice'}
@@ -209,14 +224,14 @@ const styles = {
     width: '160px',
     height: '160px',
     borderRadius: '50%',
-    border: '5px solid #ccc',  // Default gray border
+    border: '5px solid #ccc',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     transition: 'border-color 0.3s ease-in-out',
   },
   speaking: {
-    borderColor: 'green',  // Green border when speaking
+    borderColor: 'green',
   },
   avatar: {
     width: '150px',
@@ -279,7 +294,7 @@ const styles = {
   roadmapConnector: {
     width: '50px',
     height: '2px',
-    backgroundColor: '#ccc',  // Connector line between roadmap items
+    backgroundColor: '#ccc',
     margin: '0 10px',
   },
   progressContainer: {

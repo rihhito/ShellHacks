@@ -28,10 +28,10 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 # Model settings for response generation
 generation_config = {
-    "temperature": 1,
+    "temperature": 0.9,  # Ensure conversational variety without too much randomness
     "top_p": 0.95,
     "top_k": 64,
-    "max_output_tokens": 8192,
+    "max_output_tokens": 2000,  # Increase token limit to handle longer conversations
     "response_mime_type": "text/plain",
 }
 
@@ -39,15 +39,13 @@ generation_config = {
 def load_chat_history():
     try:
         chat_history = []
-        docs = db.collection('chat_history').order_by('timestamp').stream()
+        docs = db.collection('chat_history').order_by('timestamp').limit_to_last(3).stream()
         for doc in docs:
             data = doc.to_dict()
-            # User message
             chat_history.append({
                 'author': 'user',
                 'content': data['user_message']
             })
-            # Assistant message
             chat_history.append({
                 'author': 'assistant',
                 'content': data['assistant_message']
@@ -77,12 +75,9 @@ history = load_chat_history()
 model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
     generation_config=generation_config,
-    system_instruction="You are a financial literacy teacher. You will be teaching users about "
-    "financial literacy and guide them. Users will be listening to the lecture about the topic of the module "
-    "You will provide interactive content to make it a freindly leanrinig environment"
-    "You will also be learning to adjust your response based on what the user has "
-    "answered. explain topic with common life examples, maka fun, charismathic. Additionally, do not use emojis "
-    "in your response. Provide a detailed explanation for your response."
+    system_instruction="You are Dani, a financial literacy teacher, and will be constantly engaging the user. "
+    "Start each level by explaining the topic of the level in an interactive and fun way. After each user answer, analyze "
+    "the response and give personalized feedback. Never go silent, and always engage the user in conversation."
 )
 
 # Start chat session
@@ -97,12 +92,12 @@ for message in history:
 
 chat_session.send_message("Done loading messages. Now you can reply normally.")
 
-# AI call function with only the 'question' parameter
-def ai_call(question):
-    user_message_text = f"User asked: {question}"
+# AI call function for analyzing user answers and continuous conversation
+def ai_call(user_message, level_topic):
+    user_message_text = f"User said: {user_message}"
 
-    # Send the message to the chat session
-    response = chat_session.send_message(user_message_text)
+    # Send the level topic and user message to Gemini AI
+    response = chat_session.send_message(f"The current level topic is: {level_topic}. {user_message_text}")
 
     # Append user message to history
     history.append({
@@ -119,6 +114,12 @@ def ai_call(question):
     # Save updated history to Firebase
     save_chat_message(user_message_text, response.text)
 
+    # Continue the conversation with a follow-up prompt if response is too short
+    if len(response.text.split()) < 20:  # Check if response is too short
+        follow_up = chat_session.send_message(f"{user_message_text}. What else can we talk about?")
+        save_chat_message("Follow-up", follow_up.text)
+        response.text += f" {follow_up.text}"  # Append follow-up response
+
     return response.text
 
 # Flask API endpoint to handle AI calls
@@ -126,13 +127,14 @@ def ai_call(question):
 def ai_call_endpoint():
     data = request.get_json()
     question = data.get('question')
+    level_topic = data.get('level_topic')  # Adding level topic
 
-    # Ensure the question parameter is provided
-    if not question:
-        return jsonify({'error': 'Missing question parameter'}), 400
+    # Ensure the question and level_topic parameter are provided
+    if not question or not level_topic:
+        return jsonify({'error': 'Missing question or level_topic parameter'}), 400
 
-    # Call the AI function with only the question
-    response_text = ai_call(question)
+    # Call the AI function with the user's message and level topic
+    response_text = ai_call(question, level_topic)
 
     return jsonify({'response': response_text}), 200
 
