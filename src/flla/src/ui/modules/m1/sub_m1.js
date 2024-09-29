@@ -114,7 +114,7 @@ const SubModule1 = ({ setProgress }) => {
       <div style={styles.daniContainer}>
         <div style={styles.daniPlaceholder}>
           <img
-            src="https://via.placeholder.com/100"
+            src={`${process.env.PUBLIC_URL}/avatars/Daniai.png`}
             alt="AI Teacher Dani"
             style={styles.daniAvatar}
           />
