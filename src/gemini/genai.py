@@ -23,16 +23,16 @@ db = firestore.client()
 # Access the variable
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-#Gemini
-genai.configure(api_key= GEMINI_API_KEY)
+# Gemini configuration
+genai.configure(api_key=GEMINI_API_KEY)
 
-#Create the model
+# Model settings for response generation
 generation_config = {
-  "temperature": 1,
-  "top_p": 0.95,
-  "top_k": 64,
-  "max_output_tokens": 8192,
-  "response_mime_type": "text/plain",
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 64,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
 }
 
 # Function to load chat history from Firebase
@@ -73,40 +73,34 @@ def save_chat_message(user_message_text, assistant_message_text):
 # Load existing chat history
 history = load_chat_history()
 
-# Model initialization and settings
+# Initialize Gemini model with history
 model = genai.GenerativeModel(
-  model_name="gemini-1.5-flash",
-  generation_config=generation_config,
-  system_instruction= "You are a financial literacy teacher. You will be teaching users about " \
-     "financial literacy and guide them. Users will be playing a game in which if they "\
-     "answer a question wrong. You will provide hints towards the right answer, but never give the "\
-     "right answer. You will also be learning to adjust your response based on what the user has "
-     "answered right or wrong and how many times they have tried. Additionally, do not use emojis "\
-     "in your response. Provide a detailed explenation for your response."\
-     "Do not ask questions back to the user, you will simply be providing a detail hint "\
-     "towards the right answer. You are not a chatbot but more like a hint assistant. "\
-     "You will not be providing hint suggestions, but rather giving the hints yourslef. "\
-     "You are roleplaying as the learning assistant."
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+    system_instruction="You are a financial literacy teacher. You will be teaching users about "
+    "financial literacy and guide them. Users will be playing a game in which if they "
+    "answer a question wrong. You will provide hints towards the right answer, but never give the "
+    "right answer. You will also be learning to adjust your response based on what the user has "
+    "answered right or wrong and how many times they have tried. Additionally, do not use emojis "
+    "in your response. Provide a detailed explanation for your response."
 )
 
-# Load the model based on previous chats
+# Start chat session
 chat_session = model.start_chat()
 
-chat_session.send_message("The following will be previous messages from conversations. Do not "\
-                          "reply to these messages. They are just for you to keep track of "\
+# Preload previous conversation history into the AI model
+chat_session.send_message("The following will be previous messages from conversations. Do not "
+                          "reply to these messages. They are just for you to keep track of "
                           "the conversation.")
 for message in history:
     response = chat_session.send_message(message['content'])
-    #print(response.text)
 
-chat_session.send_message("Done loading messages. Now you can reply normally")
+chat_session.send_message("Done loading messages. Now you can reply normally.")
 
+# AI call function with only the 'question' parameter
+def ai_call(question):
+    user_message_text = f"User asked: {question}"
 
-def ai_call(question, chosen_answer, correct_answer):
-    user_message_text = (
-        f"Question: {question}, the chosen answer by the user was: {chosen_answer}, "
-        f"the correct answer was: {correct_answer}"
-    )
     # Send the message to the chat session
     response = chat_session.send_message(user_message_text)
 
@@ -127,22 +121,20 @@ def ai_call(question, chosen_answer, correct_answer):
 
     return response.text
 
-# Flask integration
+# Flask API endpoint to handle AI calls
 @app.route('/ai_call', methods=['POST'])
 def ai_call_endpoint():
     data = request.get_json()
     question = data.get('question')
-    chosen_answer = data.get('chosen_answer')
-    correct_answer = data.get('correct_answer')
 
-    if not all([question, chosen_answer, correct_answer]):
-        return jsonify({'error': 'Missing parameters'}), 400
+    # Ensure the question parameter is provided
+    if not question:
+        return jsonify({'error': 'Missing question parameter'}), 400
 
-    response_text = ai_call(question, chosen_answer, correct_answer)
+    # Call the AI function with only the question
+    response_text = ai_call(question)
+
     return jsonify({'response': response_text}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
-# Example usage
-#print(ai_call("What is credit money?", "Credit money is the money you have saved", "Credit is money provided by a bank. Not money a person has saved"))

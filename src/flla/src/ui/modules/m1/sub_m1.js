@@ -1,419 +1,243 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // For calling the Flask API
+import React, { Suspense, useEffect, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, useGLTF } from '@react-three/drei';
+import axios from 'axios';
+import useSpeechSynthesis from './useSpeechSynthesis';  // Import custom speech synthesis hook
+
+// DaniModel Component to load the .glb model
+const DaniModel = () => {
+  const { scene } = useGLTF(`${process.env.PUBLIC_URL}/models/dani.glb`);
+  return <primitive object={scene} scale={1.5} />;
+};
 
 const SubModule1 = ({ setProgress }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [toggleVoice, setToggleVoice] = useState(false); // Toggle for voice/chat
-  const [feedback, setFeedback] = useState(null);
-  const [explanation, setExplanation] = useState(null); // Holds Dani's explanation
-  const [isLoading, setIsLoading] = useState(false); // Loading state for animation
-  const [levelProgress, setLevelProgress] = useState([true, false, false]); // Track level unlocks
-  const [isCorrectAnswer, setIsCorrectAnswer] = useState(null); // Track right/wrong answers
-  const [answeredQuestions, setAnsweredQuestions] = useState({
-    level1: { q1: null, q2: null, q3: null },
-  }); // Track answers to all questions
-  const [progress, setInternalProgress] = useState(33); // Local progress tracker
-  const [retryEnabled, setRetryEnabled] = useState(false); // Retry button control
-  const [levelCompleted, setLevelCompleted] = useState(false); // Control post-level completion
+  const [toggleVoice, setToggleVoice] = useState(false);  // Voice toggle
+  const [explanation, setExplanation] = useState('');  // AI response
+  const [isLoading, setIsLoading] = useState(false);  // Loading state
+  const [userQuestion, setUserQuestion] = useState('');  // Track the user's question
 
-  // Correct answers for questions
-  const correctAnswers = {
-    level1: {
-      q1: 'Answer 1',
-      q2: 'Answer 1',
-      q3: 'Answer 2',
-    },
-  };
+  // Use the custom speech synthesis hook
+  const { speak, stop, speaking, speechSupported } = useSpeechSynthesis();
 
-  // Call the Gemini API for topic explanation
+  // Call Gemini API for topic explanation
   const getTopicExplanation = async (topic) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true); // Start loading animation
-      const response = await axios.post('http://localhost:5000/ai_call', {
-        question: topic,
-        chosen_answer: '',
-        correct_answer: '',
+      const response = await axios.post('http://10.108.132.25:5000/ai_call', { 
+        question: topic  // Only pass the topic as the question
       });
-      setExplanation(response.data.response);
-      setIsLoading(false); // End loading animation
+      const explanationText = response.data.response;
+      setExplanation(explanationText);
+
+      // If voice is enabled, speak the explanation
+      if (toggleVoice) {
+        speak(explanationText);
+      }
     } catch (error) {
-      console.error("Error getting explanation from AI:", error);
-      setIsLoading(false); // End loading animation even on error
+      console.error('Error calling Gemini AI:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Triggered when the user selects a level or topic
+  // Handle user question submission
+  const handleUserQuestionSubmit = async () => {
+    if (userQuestion.trim()) {
+      setIsLoading(true);
+      try {
+        const response = await axios.post('http://10.108.132.25:5000/ai_call', { 
+          question: userQuestion  // Pass the user's question to the AI
+        });
+        const aiResponse = response.data.response;
+        setExplanation(aiResponse);  // Show AI's response in the explanation
+
+        // If voice is enabled, speak the AI's response
+        if (toggleVoice) {
+          speak(aiResponse);
+        }
+      } catch (error) {
+        console.error('Error calling Gemini AI:', error);
+      } finally {
+        setIsLoading(false);
+        setUserQuestion('');  // Clear the input field after submission
+      }
+    }
+  };
+
+  // Load explanation based on the current level
   useEffect(() => {
     if (currentLevel === 1) {
-      getTopicExplanation("What is money?");
+      getTopicExplanation('What is money?');
     } else if (currentLevel === 2) {
-      getTopicExplanation("What is currency and inflation?");
-    } else if (currentLevel === 3) {
-      getTopicExplanation("What is compound interest?");
+      getTopicExplanation('What is currency and inflation?');
     }
-  }, [currentLevel]);
 
-  // Handle the voice toggle
+    // Stop speaking when the component is unmounted or when switching levels
+    return () => stop();
+  }, [currentLevel, toggleVoice]);
+
+  // Handle voice toggle
   const handleToggleVoice = () => {
     setToggleVoice(!toggleVoice);
-  };
 
-  // Check answer and update question state
-  const checkAnswer = (question, selectedAnswer) => {
-    const isCorrect = selectedAnswer === correctAnswers[`level${currentLevel}`][question];
-    setIsCorrectAnswer(isCorrect);
-    setAnsweredQuestions((prevState) => ({
-      ...prevState,
-      [`level${currentLevel}`]: { ...prevState[`level${currentLevel}`], [question]: isCorrect },
-    }));
-
-    if (isCorrect) {
-      setRetryEnabled(false); // Disable retry if correct
+    // If turning on voice and there's already an explanation, speak it
+    if (!toggleVoice && explanation) {
+      speak(explanation);
     } else {
-      setRetryEnabled(true); // Enable retry if incorrect
-    }
-
-    // If all answers are correct for this level, unlock the next level
-    if (
-      Object.values({
-        ...answeredQuestions[`level${currentLevel}`],
-        [question]: isCorrect,
-      }).every((val) => val === true)
-    ) {
-      unlockNextLevel();
-      setLevelCompleted(true); // Mark level as completed
+      stop();
     }
   };
 
-  // Unlock the next level
-  const unlockNextLevel = () => {
-    if (currentLevel < 3) {
-      setLevelProgress((prev) => {
-        const updatedProgress = [...prev];
-        updatedProgress[currentLevel] = true;
-        return updatedProgress;
-      });
-      setInternalProgress((prev) => prev + 33); // Update local progress tracker
-      setProgress((prev) => prev + 33); // Update global progress
-    }
-  };
+  return (
+    <div style={styles.container}>
+      <h1 style={styles.title}>Sub-module 1: Understanding Money</h1>
 
-  // Retry the questions
-  const retryQuestions = () => {
-    setAnsweredQuestions({
-      ...answeredQuestions,
-      [`level${currentLevel}`]: { q1: null, q2: null, q3: null },
-    });
-    setIsCorrectAnswer(null); // Reset correctness state
-    setRetryEnabled(false); // Disable retry button after reset
-  };
+      {/* Dani's virtual classroom */}
+      <div style={styles.classroomContainer}>
+        <Canvas style={styles.canvas}>
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[0, 5, 5]} intensity={1} />
+          <Suspense fallback={null}>
+            <DaniModel />  {/* Render Dani's 3D model */}
+          </Suspense>
+          <OrbitControls enableZoom={false} />  {/* Control for rotating Dani */}
+        </Canvas>
 
-  // Render Dani Placeholder (Voice/Chat Mode)
-  const renderDaniPlaceholder = () => {
-    return (
-      <div style={styles.daniContainer}>
-        <div style={styles.daniPlaceholder}>
-          <img
-            src={`${process.env.PUBLIC_URL}/avatars/Daniai.png`}
-            alt="AI Teacher Dani"
-            style={styles.daniAvatar}
-          />
-          <h3 style={styles.daniName}>Dani</h3>
-        </div>
-
-        {/* Toggle for voice vs chat */}
-        <div style={styles.voiceToggle}>
-          <label style={styles.toggleLabel}>
-            Voice Mode:
-            <input
-              type="checkbox"
-              checked={toggleVoice}
-              onChange={handleToggleVoice}
-              style={styles.toggleInput}
-            />
-          </label>
-        </div>
-
-        {/* Show explanation in chat box if voice is off */}
-        {!toggleVoice && explanation && (
-          <div style={{ ...styles.daniChat, animation: 'fadeIn 0.5s ease-in-out' }}>
-            <p>{explanation}</p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Render Quiz for Level 1 with Randomized Answer Order
-  const renderLevel1Content = () => {
-    const quizQuestions = [
-      {
-        question: 'Why is the painting not a suitable medium of exchange?',
-        answers: ['Answer 1', 'Answer 2'].sort(() => 0.5 - Math.random()),
-        key: 'q1',
-      },
-      {
-        question: 'If Carlos had cash, what function of money would it serve?',
-        answers: ['Answer 1', 'Answer 2'].sort(() => 0.5 - Math.random()),
-        key: 'q2',
-      },
-      {
-        question: 'How does the use of money make transactions easier?',
-        answers: ['Answer 1', 'Answer 2'].sort(() => 0.5 - Math.random()),
-        key: 'q3',
-      },
-    ];
-
-    return (
-      <div style={styles.levelContainer}>
-        <h2>Level 1: What is Money?</h2>
-
-        {/* Render Quiz */}
-        <div style={styles.quizContainer}>
-          {quizQuestions.map((q, index) => (
-            <div key={index} style={styles.quizItem}>
-              <p>{q.question}</p>
-              {q.answers.map((ans, i) => (
-                <button
-                  key={i}
-                  style={{
-                    ...styles.answerButton,
-                    backgroundColor:
-                      answeredQuestions.level1[q.key] === null
-                        ? '#ccc' // Gray if not answered
-                        : answeredQuestions.level1[q.key] === true
-                        ? 'green' // Green if correct
-                        : 'red', // Red if wrong
-                  }}
-                  onClick={() => checkAnswer(q.key, ans)}
-                  disabled={answeredQuestions.level1[q.key] !== null} // Disable if already answered
-                >
-                  {ans}
-                </button>
-              ))}
+        {/* Dani's explanation (either voice or chat) */}
+        <div style={styles.daniExplanation}>
+          {toggleVoice ? (
+            <p>{speaking ? 'Dani is speaking...' : 'Voice mode is on'}</p>
+          ) : (
+            <div style={styles.captionBox}>
+              <p>{explanation}</p>  {/* Text explanation if voice is off */}
             </div>
-          ))}
-        </div>
-
-        {/* Show right/wrong answer feedback */}
-        {isCorrectAnswer !== null && (
-          <p style={{ color: isCorrectAnswer ? 'green' : 'red' }}>
-            {isCorrectAnswer ? 'Correct!' : 'Wrong answer, try again!'}
-          </p>
-        )}
-
-        {/* Retry Button */}
-        {retryEnabled && (
-          <button style={styles.retryButton} onClick={retryQuestions}>
-            Retry Questions
+          )}
+          <button onClick={handleToggleVoice} style={styles.toggleButton}>
+            {toggleVoice ? 'Turn Off Voice' : 'Turn On Voice'}
           </button>
-        )}
-
-        {/* Post-level completion options */}
-        {levelCompleted && (
-          <div style={styles.completionContainer}>
-            <p>Level 1 Completed!</p>
-            <button style={styles.nextButton} onClick={() => setCurrentLevel(2)}>
-              Move to Level 2
-            </button>
-            <button style={styles.submoduleButton} onClick={() => setCurrentLevel(null)}>
-              Back to Submodules
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Render Levels with Requirements and Roadmap
-  const renderLevelContent = () => {
-    if (currentLevel === 1) return renderLevel1Content();
-    if (currentLevel === 2 && levelProgress[1]) {
-      return (
-        <div>
-          <h2>Level 2: Currency and Inflation</h2>
-          <p>Explanation for currency and inflation...</p>
         </div>
-      );
-    }
-    if (currentLevel === 3 && levelProgress[2]) {
-        return (
-          <div>
-            <h2>Level 3: Compound Interest</h2>
-            <p>Explanation for compound interest...</p>
-          </div>
-        );
-      }
-      return <p>Select a level to start learning!</p>;
-    };
-  
-    return (
-      <div style={styles.container}>
-        {/* Dani (AI Teacher) on the right */}
-        {renderDaniPlaceholder()}
-  
-        <h1 style={styles.title}>Sub-module 1: Understanding Money</h1>
-  
-        {/* Progress Bar with percentage on top */}
-        <div style={styles.progressBarContainer}>
-          <div style={{ ...styles.progressBar, width: `${progress}%` }}>
-            <span style={styles.progressText}>{progress}%</span>
-          </div>
-        </div>
-  
-        {/* Render Content Based on Selected Level */}
-        {renderLevelContent()}
       </div>
-    );
-  };
-  
-  const styles = {
-    container: {
-      backgroundColor: '#1e1e1e',
-      color: '#fff',
-      fontFamily: "'Poppins', sans-serif",
-      padding: '20px',
-      minHeight: '100vh',
-      position: 'relative',
-    },
-    title: {
-      textAlign: 'center',
-      color: 'gold',
-      fontSize: '36px',
-      marginBottom: '20px',
-    },
-    progressBarContainer: {
-      position: 'relative',
-      width: '100%',
-      height: '25px',
-      backgroundColor: '#444',
-      borderRadius: '15px',
-      marginBottom: '20px',
-    },
-    progressBar: {
-      height: '100%',
-      backgroundColor: 'gold',
-      borderRadius: '15px',
-      textAlign: 'center',
-      position: 'relative',
-      lineHeight: '25px',
-    },
-    progressText: {
-      position: 'absolute',
-      width: '100%',
-      top: '0',
-      color: '#1e1e1e',
-      fontWeight: 'bold',
-    },
-    quizContainer: {
-      marginTop: '20px',
-      backgroundColor: '#444',
-      padding: '15px',
-      borderRadius: '10px',
-    },
-    quizItem: {
-      marginBottom: '15px',
-    },
-    answerButton: {
-      backgroundColor: '#ccc', // Default gray color
-      color: '#1e1e1e',
-      padding: '10px 15px',
-      border: 'none',
-      borderRadius: '5px',
-      cursor: 'pointer',
-      fontWeight: 'bold',
-      margin: '5px',
-      transition: 'all 0.3s',
-      '&:hover': {
-        transform: 'scale(1.1)',
-      },
-    },
-    retryButton: {
-      marginTop: '20px',
-      backgroundColor: 'red',
-      color: '#fff',
-      padding: '10px 20px',
-      border: 'none',
-      borderRadius: '5px',
-      cursor: 'pointer',
-      fontWeight: 'bold',
-    },
-    daniContainer: {
-      position: 'absolute',
-      right: '20px',
-      top: '20%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-    },
-    daniPlaceholder: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-    },
-    daniAvatar: {
-      width: '100px',
-      height: '100px',
-      borderRadius: '50%',
-      border: '3px solid gold',
-    },
-    daniName: {
-      color: 'gold',
-      fontSize: '18px',
-      marginTop: '10px',
-    },
-    voiceToggle: {
-      marginTop: '20px',
-      color: '#fff',
-    },
-    toggleLabel: {
-      display: 'flex',
-      alignItems: 'center',
-      fontSize: '16px',
-    },
-    toggleInput: {
-      marginLeft: '10px',
-    },
-    daniChat: {
-      backgroundColor: '#444',
-      color: '#fff',
-      padding: '10px',
-      borderRadius: '5px',
-      marginTop: '10px',
-      maxWidth: '300px',
-      textAlign: 'left',
-    },
-    loadingContainer: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '200px',
-    },
-    completionContainer: {
-      marginTop: '20px',
-      textAlign: 'center',
-    },
-    nextButton: {
-      padding: '10px 20px',
-      backgroundColor: 'green',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '5px',
-      cursor: 'pointer',
-      margin: '10px',
-      fontWeight: 'bold',
-    },
-    submoduleButton: {
-      padding: '10px 20px',
-      backgroundColor: 'blue',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '5px',
-      cursor: 'pointer',
-      margin: '10px',
-      fontWeight: 'bold',
-    },
-  };
-  
-  export default SubModule1;
-  
+
+      {/* User input to ask a question */}
+      <div style={styles.userInputContainer}>
+        <input
+          type="text"
+          placeholder="Ask Dani a question..."
+          value={userQuestion}
+          onChange={(e) => setUserQuestion(e.target.value)}  // Update question state
+          style={styles.inputField}
+        />
+        <button onClick={handleUserQuestionSubmit} style={styles.askButton}>
+          Ask Dani
+        </button>
+      </div>
+
+      {/* Level 1 Content */}
+      {currentLevel === 1 && (
+        <div style={styles.levelContainer}>
+          <h2>Level 1: What is Money?</h2>
+          <p>Learning Objective: Understand the concept of money, its history, and its importance in society.</p>
+        </div>
+      )}
+
+      {/* Level Progression */}
+      <div style={styles.progressContainer}>
+        <button onClick={() => setCurrentLevel(currentLevel + 1)} style={styles.nextButton}>
+          Next Level
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const styles = {
+  container: {
+    backgroundColor: '#1e1e1e',
+    color: '#fff',
+    fontFamily: "'Poppins', sans-serif",
+    padding: '20px',
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: '36px',
+    color: 'gold',
+    textAlign: 'center',
+  },
+  classroomContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    width: '100%',
+    maxWidth: '1200px',
+    margin: '20px 0',
+  },
+  canvas: {
+    width: '400px',
+    height: '400px',
+  },
+  daniExplanation: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  captionBox: {
+    backgroundColor: '#444',
+    padding: '20px',
+    borderRadius: '10px',
+    textAlign: 'center',
+  },
+  toggleButton: {
+    marginTop: '20px',
+    backgroundColor: 'gold',
+    color: '#1e1e1e',
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '10px',
+    cursor: 'pointer',
+  },
+  userInputContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '20px',
+  },
+  inputField: {
+    width: '300px',
+    padding: '10px',
+    borderRadius: '5px',
+    border: '1px solid #ccc',
+    marginRight: '10px',
+  },
+  askButton: {
+    backgroundColor: 'gold',
+    color: '#1e1e1e',
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '5px',
+    cursor: 'pointer',
+  },
+  levelContainer: {
+    textAlign: 'center',
+    backgroundColor: '#333',
+    padding: '20px',
+    borderRadius: '10px',
+    margin: '20px 0',
+  },
+  progressContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '20px',
+  },
+  nextButton: {
+    backgroundColor: 'green',
+    color: '#fff',
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '10px',
+    cursor: 'pointer',
+  },
+};
+
+export default SubModule1;
