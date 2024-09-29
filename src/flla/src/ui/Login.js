@@ -19,10 +19,22 @@ const Login = ({ onLogin }) => {
 
   return (
     <div style={styles.container}>
-      {/* App Name and Slogan */}
-      <h1 style={styles.appName}>CAPITAL CLASH</h1>
-      <p style={styles.slogan}>Your Financial Guide</p>
+      {/* Full-Screen Image with Description */}
+      <div style={styles.imageContainer}>
+        <img
+          src={`${process.env.PUBLIC_URL}/capital_clash.jpg`}
+          alt="Capital Clash Logo"
+          style={styles.fullscreenImage}
+        />
+        {/* Description Overlay */}
+        <div style={styles.descriptionOverlay}>
+          <h1 style={styles.descriptionText}>
+            Designing something that would be both educational and entertaining
+          </h1>
+        </div>
+      </div>
 
+      {/* Login Form */}
       <h2 style={styles.formTitle}>{isSignUp ? 'Create an Account' : 'Login'}</h2>
       <form onSubmit={handleSubmit} style={styles.form}>
         {isSignUp && (
@@ -76,30 +88,39 @@ const Login = ({ onLogin }) => {
 
 const styles = {
   container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
     backgroundColor: '#1e1e1e', // Black background
+    overflowX: 'hidden',
   },
-  appName: {
-    fontSize: '72px',  // Bigger and bold for a creative touch
-    fontWeight: '900',
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: '100vh', // Full viewport height
+    overflow: 'hidden',
+  },
+  fullscreenImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  descriptionOverlay: {
+    position: 'absolute',
+    top: '75%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    color: 'white',
+    textAlign: 'center',
+    padding: '0 20px',
+  },
+  descriptionText: {
+    fontSize: '28px',
     color: 'gold',
-    textTransform: 'uppercase',  // Make it all caps
-    letterSpacing: '5px',  // Spread out the letters a little for effect
-    marginBottom: '0px',  // Tighten the gap between the title and slogan
-  },
-  slogan: {
-    fontSize: '20px',
-    color: '#fff',
-    marginBottom: '30px',  // More space after the slogan
-    fontStyle: 'italic',  // Adding italics for a classy touch
+    textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
   },
   formTitle: {
     color: 'gold',
-    marginBottom: '20px',  // Extra space above form title
+    marginBottom: '20px',
+    textAlign: 'center',
+    marginTop: '40px', // Space from the image
   },
   form: {
     display: 'flex',
@@ -107,12 +128,13 @@ const styles = {
     width: '300px',
     padding: '30px',
     backgroundColor: '#1e1e1e',
-    boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)',  // More shadow for emphasis
-    borderRadius: '10px',  // Slightly more rounded corners
+    boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)',
+    borderRadius: '10px',
     border: '2px solid gold',
+    margin: '0 auto', // Center the form
   },
   inputContainer: {
-    marginBottom: '20px',  // Increase spacing between inputs
+    marginBottom: '20px',
   },
   label: {
     color: 'gold',
@@ -134,14 +156,17 @@ const styles = {
     cursor: 'pointer',
     fontWeight: 'bold',
     fontSize: '16px',
-    marginTop: '10px',  // Add some space between button and inputs
+    marginTop: '10px',
   },
   toggleButton: {
-    marginTop: '20px',  // Increased margin for spacing
+    marginTop: '20px',
     color: 'gold',
     background: 'none',
     border: 'none',
     cursor: 'pointer',
+    display: 'block',
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
 };
 

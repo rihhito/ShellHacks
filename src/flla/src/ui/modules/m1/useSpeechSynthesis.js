@@ -16,7 +16,7 @@ const useSpeechSynthesis = () => {
         setVoices(availableVoices);
         // Automatically select a natural-sounding voice, e.g., Google voices
         const defaultVoice = availableVoices.find((voice) =>
-          voice.name.includes("Google US English") || voice.name.includes("Google UK English")
+          voice.name.includes("Google US English")
         );
         setSelectedVoice(defaultVoice || availableVoices[0]); // Set a default voice
       };

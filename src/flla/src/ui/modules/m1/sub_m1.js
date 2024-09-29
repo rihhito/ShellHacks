@@ -5,11 +5,10 @@ import useSpeechSynthesis from './useSpeechSynthesis';  // Import custom speech 
 const SubModule1 = ({ setProgress, onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [toggleVoice, setToggleVoice] = useState(false);  // Voice toggle
-  const [explanation, setExplanation] = useState('');  // AI response
+  const [daniMessage, setDaniMessage] = useState('');  // Dani's message (explanation or feedback)
   const [isLoading, setIsLoading] = useState(false);  // Loading state
   const [userQuestion, setUserQuestion] = useState('');  // Track the user's question
   const [points, setPoints] = useState(0);  // Track user's points
-  const [question, setQuestion] = useState('');  // Track current question
   const [userAnswer, setUserAnswer] = useState('');  // Store user answer
   const [levelUnlocked, setLevelUnlocked] = useState([true, false, false]);  // Track level unlocks
 
@@ -23,24 +22,26 @@ const SubModule1 = ({ setProgress, onBack }) => {
   // Use the custom speech synthesis hook
   const { speak, stop, speaking, speechSupported } = useSpeechSynthesis();
 
+  // Handle Dani's response (display and speak)
+  const handleDaniResponse = (message) => {
+    setDaniMessage(message);
+    if (toggleVoice) {
+      speak(message);
+    }
+  };
+
   // Call Gemini API for Dani to ask a question and start conversation
   const askQuestion = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/ai_call', {
+      const response = await axios.post('http://10.108.132.25:5000/ai_call', {
         question: `Please explain the current level.`,
         level_topic: levelTopics[currentLevel]  // Send the level topic to AI
       });
-      setQuestion(response.data.response);
+      handleDaniResponse(response.data.response);
 
       // Log when question is received
       console.log('Received explanation: ', response.data.response);
-
-      // If voice is toggled on, speak the explanation
-      if (toggleVoice) {
-        console.log('Speaking the explanation...');
-        speak(response.data.response);
-      }
     } catch (error) {
       console.error('Error calling AI:', error);
     } finally {
@@ -52,20 +53,14 @@ const SubModule1 = ({ setProgress, onBack }) => {
   const handleUserAnswerSubmit = async () => {
     if (userAnswer.trim()) {
       try {
-        const response = await axios.post('http://localhost:5000/ai_call', {
+        const response = await axios.post('http://10.108.132.25:5000/ai_call', {
           question: userAnswer,
           level_topic: levelTopics[currentLevel]  // Provide context to AI
         });
         const feedback = response.data.response;
-        setExplanation(feedback); // Dani gives feedback
+        handleDaniResponse(feedback); // Dani gives feedback
 
-        // If voice is toggled on, speak the feedback
-        if (toggleVoice) {
-          console.log('Speaking feedback...');
-          speak(feedback);
-        }
-
-        if (feedback.includes('correct')) {
+        if (feedback.toLowerCase().includes('correct')) {
           setPoints((prevPoints) => prevPoints + 10);  // Award 10 points for a correct answer
         }
 
@@ -100,10 +95,10 @@ const SubModule1 = ({ setProgress, onBack }) => {
   const handleToggleVoice = () => {
     setToggleVoice(!toggleVoice);
     
-    // If turning on voice and there's already an explanation, speak it
-    if (!toggleVoice && explanation) {
-      console.log('Speaking explanation...');
-      speak(explanation);
+    // If turning on voice and there's already a message, speak it
+    if (!toggleVoice && daniMessage) {
+      console.log('Speaking message...');
+      speak(daniMessage);
     } else {
       stop(); // Stop any ongoing speech if toggling off
     }
@@ -123,7 +118,7 @@ const SubModule1 = ({ setProgress, onBack }) => {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>Sub-module 1: {levelTopics[currentLevel]}</h1>
+      <h1 style={styles.title}> {levelTopics[currentLevel]}</h1>
 
       {/* Dani's Avatar and Explanation */}
       <div style={styles.daniExplanation}>
@@ -135,7 +130,7 @@ const SubModule1 = ({ setProgress, onBack }) => {
           />
         </div>
         <div style={styles.captionBox}>
-          <p>{question}</p>  {/* Show the question */} 
+          <p>{daniMessage}</p>  {/* Show Dani's message */} 
         </div>
         <button onClick={handleToggleVoice} style={styles.toggleButton}>
           {toggleVoice ? 'Turn Off Voice' : 'Turn On Voice'}
