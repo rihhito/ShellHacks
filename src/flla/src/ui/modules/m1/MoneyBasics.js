@@ -11,6 +11,10 @@ const MoneyBasics = () => {
     setActiveSubmodule(submodule);
   };
 
+  const handleBackToSubmodules = () => {
+    setActiveSubmodule(null);  // Go back to the submodule selection screen
+  };
+
   return (
     <div style={styles.container}>
       {/* User Placeholder at the Top Left */}
@@ -37,8 +41,8 @@ const MoneyBasics = () => {
         </div>
       ) : (
         <div>
-          {activeSubmodule === 'sub1' && <SubModule1 setProgress={setProgress} />}
-          {activeSubmodule === 'sub2' && <SubModule2 setProgress={setProgress} />}
+          {activeSubmodule === 'sub1' && <SubModule1 setProgress={setProgress} onBack={handleBackToSubmodules} />}
+          {activeSubmodule === 'sub2' && <SubModule2 setProgress={setProgress} onBack={handleBackToSubmodules} />}
         </div>
       )}
     </div>
