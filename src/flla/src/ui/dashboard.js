@@ -7,6 +7,9 @@ const Dashboard = () => {
   const handlePrepareForBattle = () => {
     navigate('/money-basics'); // Route to the MoneyBasics page
   };
+  const handleBattle = () => {
+    navigate('/battle'); // Route to the Battle page
+  };
 
   return (
     <div style={styles.container}>
@@ -42,7 +45,7 @@ const Dashboard = () => {
         {/* Buttons for Prepare for Battle and Battle */}
         <div style={styles.buttonsContainer}>
           <button onClick={handlePrepareForBattle} style={styles.battleButton}> Prepare for Battle </button>
-          <button style={styles.battleButton}> Battle </button>
+          <button onClick={handleBattle} style={styles.battleButton}> Battle </button>
         </div>
       </div>
 

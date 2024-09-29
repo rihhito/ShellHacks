@@ -5,6 +5,7 @@ import './App.css';
 import Login from './ui/Login'; // Import the Login component
 import Dashboard from './ui/dashboard'; // Import the Dashboard component
 import MoneyBasics from './ui/modules/m1/MoneyBasics'; // Import MoneyBasics page
+import Battle from './ui/battle/Battle'; // Import MoneyBasics page
 
 
 function App() {

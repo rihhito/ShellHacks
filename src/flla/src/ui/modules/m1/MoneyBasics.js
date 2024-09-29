@@ -1,4 +1,3 @@
-// MoneyBasics.js
 import React, { useState } from 'react';
 import ProgressBar from '../visuals/ProgressBar'; // Import progress bar
 import SubModule1 from './sub_m1'; // Import Submodule 1
@@ -14,13 +13,27 @@ const MoneyBasics = () => {
 
   return (
     <div style={styles.container}>
-      <h1>Money Basics</h1>
+      {/* User Placeholder at the Top Left */}
+      <div style={styles.userPlaceholder}>
+        <img
+          src="https://via.placeholder.com/50"
+          alt="User Avatar"
+          style={styles.avatar}
+        />
+        <span style={styles.username}>User Name</span>
+      </div>
+
+      <h1 style={styles.title}>Money Basics</h1>
       <ProgressBar progress={progress} />
       {!activeSubmodule ? (
-        <div>
-          <h2>Select a submodule:</h2>
-          <button onClick={() => handleSubmoduleClick('sub1')} style={styles.button}>Submodule 1: Understanding Money</button>
-          <button onClick={() => handleSubmoduleClick('sub2')} style={styles.button}>Submodule 2: Managing Your Budget</button>
+        <div style={styles.submoduleSelection}>
+          <h2 style={styles.subtitle}>Select a submodule:</h2>
+          <button onClick={() => handleSubmoduleClick('sub1')} style={styles.button}>
+            Understanding Money
+          </button>
+          <button onClick={() => handleSubmoduleClick('sub2')} style={styles.button}>
+            Managing Your Budget
+          </button>
         </div>
       ) : (
         <div>
@@ -34,17 +47,57 @@ const MoneyBasics = () => {
 
 const styles = {
   container: {
+    backgroundColor: '#1e1e1e', // Black background
+    color: '#fff', // White text for contrast
     padding: '20px',
     textAlign: 'center',
+    minHeight: '100vh', // Ensures the full viewport is covered
+    fontFamily: "'Poppins', sans-serif",
+    position: 'relative', // Allows for absolute positioning of user placeholder
+  },
+  userPlaceholder: {
+    position: 'absolute',
+    top: '10px',
+    left: '10px',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: '50px',
+    height: '50px',
+    borderRadius: '50%',
+    border: '2px solid #EEC62A',
+  },
+  username: {
+    marginLeft: '10px',
+    color: '#EEC62A',
+    fontWeight: 'bold',
+  },
+  title: {
+    color: '#EEC62A', // Updated gold color
+    fontSize: '36px',
+    marginBottom: '20px',
+  },
+  subtitle: {
+    color: '#fff', // White subtitle text
+    fontSize: '24px',
+    marginBottom: '20px',
   },
   button: {
-    padding: '10px',
+    padding: '10px 20px',
     margin: '10px',
-    backgroundColor: '#007bff',
-    color: '#fff',
+    backgroundColor: '#EEC62A', // Updated gold button color
+    color: '#1e1e1e', // Black text inside the button
     border: 'none',
     borderRadius: '5px',
     cursor: 'pointer',
+    fontWeight: 'bold',
+    transition: 'transform 0.2s', // Smooth animation on hover
+  },
+  submoduleSelection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
 };
 
