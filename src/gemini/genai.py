@@ -39,7 +39,7 @@ generation_config = {
 def load_chat_history():
     try:
         chat_history = []
-        docs = db.collection('chat_history').order_by('timestamp').stream()
+        docs = db.collection('chat_history').order_by('timestamp').limit_to_last(3).stream()
         for doc in docs:
             data = doc.to_dict()
             # User message
