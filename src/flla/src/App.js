@@ -5,6 +5,8 @@ import './App.css';
 import Login from './ui/Login'; // Import the Login component
 import Dashboard from './ui/dashboard'; // Import the Dashboard component
 import MoneyBasics from './ui/modules/m1/MoneyBasics'; // Import MoneyBasics page
+import Modules from './ui/modules/Modules'; // Import MoneyBasics page
+
 import Battle from './ui/battle/Battle'; // Import MoneyBasics page
 
 
@@ -15,6 +17,7 @@ function App() {
         <Route path="/" element={<LoginPage />} /> {/* Initial screen */}
         <Route path="/dashboard" element={<Dashboard />} /> {/* Dashboard */}
         <Route path="/money-basics" element={<MoneyBasics />} /> {/* MoneyBasics route */}
+        <Route path="/modules" element={<Modules />} /> {/* MoneyBasics route */}
       </Routes>
     </Router>
   );

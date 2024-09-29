@@ -5,7 +5,7 @@ const Dashboard = () => {
   const navigate = useNavigate(); // Hook for navigation
 
   const handlePrepareForBattle = () => {
-    navigate('/money-basics'); // Route to the MoneyBasics page
+    navigate('/modules'); // Route to the MoneyBasics page
   };
   const handleBattle = () => {
     navigate('/battle'); // Route to the Battle page
