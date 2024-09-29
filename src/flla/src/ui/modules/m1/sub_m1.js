@@ -25,8 +25,12 @@ const SubModule1 = ({ setProgress, onBack }) => {
       });
       setQuestion(response.data.response);
 
+      // Log when question is received
+      console.log('Received question: ', response.data.response);
+
       // If voice is toggled on, speak the question
       if (toggleVoice) {
+        console.log('Speaking the question...');
         speak(response.data.response);
       }
     } catch (error) {
@@ -48,6 +52,7 @@ const SubModule1 = ({ setProgress, onBack }) => {
 
       // If voice is toggled on, speak the feedback
       if (toggleVoice) {
+        console.log('Speaking feedback...');
         speak(responseMessage);
       }
 
@@ -82,6 +87,7 @@ const SubModule1 = ({ setProgress, onBack }) => {
     
     // If turning on voice and there's already an explanation, speak it
     if (!toggleVoice && explanation) {
+      console.log('Speaking explanation...');
       speak(explanation);
     } else {
       stop(); // Stop any ongoing speech if toggling off
@@ -92,6 +98,13 @@ const SubModule1 = ({ setProgress, onBack }) => {
   useEffect(() => {
     askQuestion();  // Dani asks a question when the level changes
   }, [currentLevel]);
+
+  // Stop speech when component unmounts (user navigates away)
+  useEffect(() => {
+    return () => {
+      stop();  // Stop Dani from speaking when leaving the screen
+    };
+  }, []);
 
   return (
     <div style={styles.container}>

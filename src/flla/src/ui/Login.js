@@ -20,7 +20,7 @@ const Login = ({ onLogin }) => {
   return (
     <div style={styles.container}>
       {/* App Name and Slogan */}
-      <h1 style={styles.appName}>FINAI</h1>
+      <h1 style={styles.appName}>CAPITAL CLASH</h1>
       <p style={styles.slogan}>Your Financial Guide</p>
 
       <h2 style={styles.formTitle}>{isSignUp ? 'Create an Account' : 'Login'}</h2>
